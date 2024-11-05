@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Step 1: Install LXQt and Hyprland
+echo "Installing LXQt and Hyprland..."
+sudo eopkg install lxqt hyprland
+
+# Step 2: Configure LXQt to Use Hyprland as the Default Wayland Compositor
+echo "Configuring LXQt to use Hyprland as the default Wayland compositor..."
+mkdir -p ~/.config/hypr
+tee ~/.config/hypr/hyprland-session.sh > /dev/null <<'EOF'
+#!/bin/bash
+export XDG_CURRENT_DESKTOP=lxqt
+export XDG_SESSION_TYPE=wayland
+export XDG_SESSION_DESKTOP=hyprland
+export QT_QPA_PLATFORM=wayland
+export CLUTTER_BACKEND=wayland
+export GDK_BACKEND=wayland
+
+exec Hyprland
+EOF
+
+# Make the custom Hyprland session script executable
+chmod +x ~/.config/hypr/hyprland-session.sh
+
+# Step 3: Create a Custom Hyprland Session for GDM
+echo "Creating a custom Hyprland session file for GDM..."
+sudo mkdir -p /usr/share/wayland-sessions
+sudo tee /usr/share/wayland-sessions/lxqt-hyprland.desktop > /dev/null <<EOF
+[Desktop Entry]
+Name=LXQt with Hyprland
+Comment=Start LXQt with the Hyprland Wayland compositor
+Exec=$HOME/.config/hypr/hyprland-session.sh
+Type=Application
+DesktopNames=lxqt
+EOF
+
+# Step 4: Configure LXQt to Disable Animations for a Snappier Experience
+echo "Disabling animations in LXQt for faster performance..."
+mkdir -p ~/.config/lxqt
+tee ~/.config/lxqt/lxqt.conf > /dev/null <<EOF
+[General]
+icon_theme=Papirus-Dark
+single_click=open
+animation=false
+EOF
+
+echo "Setup complete! LXQt is configured to use Hyprland as the compositor. Select 'LXQt with Hyprland' from the GDM session menu and log in."
