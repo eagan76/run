@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Step 1: Install LXQt and Hyprland
-echo "Installing LXQt and Hyprland..."
-sudo eopkg install lxqt hyprland
+# Step 1: Install LXQt-Desktop and Hyprland
+echo "Installing LXQt-Desktop and Hyprland..."
+sudo eopkg install lxqt-desktop hyprland
 
 # Step 2: Configure LXQt to Use Hyprland as the Default Wayland Compositor
 echo "Configuring LXQt to use Hyprland as the default Wayland compositor..."
