@@ -1,0 +1,76 @@
+#!/bin/bash
+
+set -e
+
+echo "=== Void Linux + Wayland + runit PipeWire Setup ==="
+
+# Check for Void Linux
+if ! grep -q "Void" /etc/os-release; then
+  echo "Error: This script is designed for Void Linux only."
+  exit 1
+fi
+echo "✔ Verified Void Linux"
+
+# Check for Wayland session
+if [ "$XDG_SESSION_TYPE" != "wayland" ]; then
+  echo "Error: You are not running a Wayland session."
+  echo "Please log into GNOME on Wayland and rerun this script."
+  exit 1
+fi
+echo "✔ Verified Wayland session"
+
+# Check if PulseAudio is installed
+if xbps-query -Rs pulseaudio | grep -q installed; then
+  echo "✔ PulseAudio is installed, removing it now..."
+  sudo xbps-remove -R pulseaudio
+else
+  echo "✔ PulseAudio not installed, skipping removal."
+fi
+
+# Install PipeWire and WirePlumber if not installed
+if ! xbps-query -Rs pipewire | grep -q installed; then
+  echo "Installing PipeWire and WirePlumber..."
+  sudo xbps-install -Sy pipewire wireplumber
+else
+  echo "✔ PipeWire and WirePlumber already installed."
+fi
+
+# Backup existing portal config if any
+PORTAL_CONF=~/.config/xdg-desktop-portal/xdg-desktop-portal.conf
+if [ -f "$PORTAL_CONF" ]; then
+  echo "Backing up existing portal config to ${PORTAL_CONF}.bak"
+  cp "$PORTAL_CONF" "${PORTAL_CONF}.bak"
+fi
+
+# Create or overwrite portal config
+mkdir -p ~/.config/xdg-desktop-portal
+cat > "$PORTAL_CONF" <<EOF
+[preferred]
+default=gtk
+EOF
+echo "✔ Set portal backend to GTK"
+
+# Create autostart directory if missing
+mkdir -p ~/.config/autostart
+
+# Backup existing autostart file if any
+AUTOSTART_FILE=~/.config/autostart/pipewire-start.desktop
+if [ -f "$AUTOSTART_FILE" ]; then
+  echo "Backing up existing autostart file to ${AUTOSTART_FILE}.bak"
+  cp "$AUTOSTART_FILE" "${AUTOSTART_FILE}.bak"
+fi
+
+# Create autostart .desktop to launch PipeWire + WirePlumber on GNOME Wayland
+cat > "$AUTOSTART_FILE" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Start PipeWire Audio
+Exec=sh -c "pipewire & pipewire-pulse & wireplumber &"
+X-GNOME-Autostart-enabled=true
+EOF
+echo "✔ Created autostart entry for PipeWire"
+
+echo "==================================================="
+echo "✅ Setup complete! Please REBOOT your system now."
+echo "After reboot, you can launch OBS and add the 'Screen Capture (PipeWire)' source."
+echo "==================================================="
